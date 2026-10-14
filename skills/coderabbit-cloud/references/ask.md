@@ -125,11 +125,12 @@ The classified errors above are pre-send refusals. If they occur before a
 `question_sent` record, the question was not sent and is not billed. Follow
 their retry instructions.
 
-Only an unclassified `ask_failed` can be ambiguous: the send may have reached
-the side chat even when no `question_sent` record appeared. Unless its
-`message` explicitly says that no question was sent, treat it as potentially
-billed, do not ask again, report the `message`, and ask the user to check the
-web app. An error message that tells you to retry does not change this rule.
+Among command errors, only an unclassified `ask_failed` can be ambiguous: the
+send may have reached the side chat even when no `question_sent` record
+appeared. Unless its `message` explicitly says that no question was sent,
+treat it as potentially billed, do not ask again, report the `message`, and
+ask the user to check the web app. An error message that tells you to retry
+does not change this rule.
 
 After an interrupted run (exit 130 or 143), do not ask again. The question
 can have reached the side chat, and the answer shows in the web app. Ask the

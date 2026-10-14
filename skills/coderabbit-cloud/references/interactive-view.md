@@ -48,7 +48,7 @@ coderabbit code resume --last
 | ------------------------------- | -------------------------------------------------------------------------- | ------------------------- |
 | `/steer <text>`                 | Adds guidance to the running turn.                                         | `resume --agent --steer`  |
 | `/answer`                       | Answers the agent's question.                                              | `resume --agent --answer` |
-| `/cancel` (`/stop`)             | Asks first, then stops the running turn and drops queued messages.         | `cancel`                  |
+| `/cancel` (`/stop`)             | Asks first, then stops the turn and prevents queued messages from running. | `cancel`                  |
 | `/queue`                        | Lists the queued messages.                                                 | None                      |
 | `/queue edit\|delete\|send <n>` | Changes, deletes, or sends now queued message `n`.                         | None                      |
 | `/upload <path>…`               | Attaches files to the next message.                                        | None                      |
@@ -60,10 +60,16 @@ coderabbit code resume --last
 | Command                   | What it does                                           | Agent mode       |
 | ------------------------- | ------------------------------------------------------ | ---------------- |
 | `/plan`, `/plan comments` | Shows the latest plan, or counts its open comments.    | `plan`           |
-| `/approve`                | Approves the latest plan. Not for the task's author.   | `plan --approve` |
+| `/approve`                | Approves the plan version that it loads. Not for the task's author. | `plan --approve` |
 | `/implement`              | Switches to code mode and implements the plan. Billed. | None             |
 | `/revise <text>`          | Asks the agent to rewrite the plan. Billed.            | None             |
 | `/mode [plan\|code]`      | Shows the mode, or switches the mode.                  | None             |
+
+Cancellation can pause or drop queued messages; do not promise that they were
+deleted. Plan approval reloads the current finalized plan and submits that
+exact version and content hash. It can load a newer version than a separate
+read. If the plan changes after the reload, approval returns `plan_stale` and
+approves nothing: reread and show the new plan, then obtain approval again.
 
 ### Delivery and the pull request
 
