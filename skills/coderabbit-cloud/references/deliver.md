@@ -17,23 +17,28 @@ The last record is `complete` with `status` `plan_shown` or `plan_approved`.
 Read `plan.version`, `plan.markdown` (the full plan), `plan.approvals[]`, and
 `viewer` (`isAuthor`, `hasApproved`).
 
-`--approve` has no version option, so you cannot bind the approval to the
-version that the user reviewed. The command approves the latest finalized
-version at the time of the run. A newer version can finish between your last
-read and the approval. If `viewer.isAuthor` is true, do not run it: the user
-started the task and cannot approve its plan.
+`--approve` has no version option. The command loads the current finalized
+plan, then submits that exact version and content hash. If the plan changes
+after that load, the server returns `plan_stale` and approves nothing. A newer
+version can still finish between a separate read and the approval command, so
+you cannot assume that the command loaded the version that the user reviewed.
+If `viewer.isAuthor` is true, do not run it: the user started the task and
+cannot approve its plan.
 
 1. Record the `plan.version` that the user reviewed.
-2. Tell the user that the command approves the latest version at the time of
-   the run, which can be newer than the reviewed version. Run `--approve` only
-   if the user accepts this. Otherwise, the user approves the plan on the
-   cloud task page.
+2. Tell the user that the command reloads the plan before it submits an exact
+   version and hash, so it can load a newer version than the separate read.
+   Run `--approve` only if the user accepts this. Otherwise, the user approves
+   the plan on the cloud task page.
 3. Just before you approve, run `coderabbit code plan <task> --agent`. If
    `plan.version` differs, show the new plan to the user and ask again.
 4. Run `coderabbit code plan <task> --agent --approve`.
-5. After `plan_approved`, compare `plan.version` with the version that the
-   user reviewed. If they differ, tell the user at once that you approved a
-   newer version, and show it with `coderabbit code plan <task> --agent`.
+5. If the result is `plan_stale`, nothing was approved. Read the new plan,
+   show it to the user, and obtain approval again.
+6. After `plan_approved`, compare `plan.version` with the version that the
+   user reviewed. If they differ, tell the user at once that the command
+   loaded and approved a newer version, and show it with
+   `coderabbit code plan <task> --agent`.
 
 Approval does not start implementation. Do not implement the plan
 yourself, for example with a `-m` message. The user implements it with

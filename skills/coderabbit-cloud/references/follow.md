@@ -57,15 +57,14 @@ exist. Let the user decide.
 
 ```sh
 coderabbit code resume <task> --agent
-coderabbit code resume --last --agent
 coderabbit code resume <task> --agent -m "<message>"
 coderabbit code resume <task> --agent --steer "<guidance>"
 printf '%s' '<answer-json>' | coderabbit code resume <task> --agent --answer -
 ```
 
-- `<task>` is a task ID or a task URL. `--last` selects the user's most
-  recently updated task for the repository in the current directory. Pass
-  one of them, not both.
+- `<task>` is a task ID or a task URL. Use an explicit task in agent workflows.
+  Do not use `--last`: another task can become the repository's most recently
+  updated task between commands.
 - Without `--agent`, the command opens an interactive view that needs a
   terminal. Always pass `--agent`. The user can open the view themselves; see
   [interactive-view.md](interactive-view.md).
@@ -229,19 +228,21 @@ exit code 3. Read `question.questions[]` (`id`, `header`, `question`,
 coderabbit code cancel <task> --agent
 ```
 
-The command stops the running turn and drops the queued messages. The task
-stays open: a new message starts a new turn. Run it only when the user asks.
+The command stops the running turn and prevents its queued messages from
+running. The runtime can pause or drop those messages; do not promise that
+they were deleted. The task stays open: a new message starts a new turn. Run
+it only when the user asks.
 It waits up to 60 seconds. The command sends only the task ID, not a turn,
 and `code show` does not tell you which turn a pending stop belongs to. So a
-rerun can stop a new turn that someone else started, and drop messages that
+rerun can stop a new turn that someone else started, and affect messages that
 were queued after your stop. After a `cancel_requested` record, or after an
 interrupted run, do not rerun `cancel`. Before any new stop, ask the user.
 
 A `status` record with `status: "cancel_requested"` follows the stop request.
 The last record is `complete` with exit code 0:
 
-- `task_canceled`: the turn stopped. Tell the user that queued messages were
-  dropped.
+- `task_canceled`: the turn stopped. Tell the user that queued messages did
+  not run and may have been paused or dropped by the runtime.
 - `turn_finished`: the turn completed or failed before it stopped. Run
   `code show` and report the result.
 - `cancel_pending`: the turn is still stopping after 60 seconds. Tell the

@@ -121,14 +121,15 @@ reaches a side chat, so they bill nothing.
   `message`.
 - `invalid_arguments`: correct the value, then rerun once.
 
-After `ask_failed` or any other error except `side_chat_limit_reached`,
-`side_chat_starting`, `side_chat_not_found`, `side_chat_closed`, and corrected
-`invalid_arguments`, the question can have reached the side chat, also with
-`--follow-up` and when no `side_chat_opened` record appeared. If it did, it is
-billed, and the answer shows in the web app. Do not ask again. Report the
-`message` and ask the user. For the listed pre-send refusals, follow the retry
-instructions above. An error message that tells you to retry does not change
-these rules.
+The classified errors above are pre-send refusals. If they occur before a
+`question_sent` record, the question was not sent and is not billed. Follow
+their retry instructions.
+
+Only an unclassified `ask_failed` can be ambiguous: the send may have reached
+the side chat even when no `question_sent` record appeared. Unless its
+`message` explicitly says that no question was sent, treat it as potentially
+billed, do not ask again, report the `message`, and ask the user to check the
+web app. An error message that tells you to retry does not change this rule.
 
 After an interrupted run (exit 130 or 143), do not ask again. The question
 can have reached the side chat, and the answer shows in the web app. Ask the
