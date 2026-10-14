@@ -19,43 +19,9 @@ Check the installed command's `--help` before using newer features. Public refer
 
 ## Usage and paid continuation
 
-When cost or quota affects a review decision, run `coderabbit usage --agent`
-from the target repository in the approved authentication context. Check
-`coderabbit usage --help` if support is uncertain; older binaries may offer only
-human-readable `coderabbit usage`. This lookup does not start a review.
-
-- Read `includedReviews.remaining`, `limit`, `rollingWindowMs`, and any
-  `nextAvailableInMs` or `fullCapacityInMs` as the current included allowance
-  and recovery timing. An exhausted included allowance does not establish that
-  paid continuation is unavailable. An available allowance is a snapshot, not a
-  reservation or a guarantee that the review will be admitted.
-- `billingPeriod` reports usage billing status and, when available, the caller's
-  spend, waived spend, and reset date. A returned `reviewSpendingCap` is shared
-  across the subscription; never subtract personal spend to invent remaining
-  shared headroom. Waived past spend does not promise future free reviews.
-- Newer clients may include `reviewCredits.prepaid` and `reviewCredits.legacyCli`.
-  The former reports `reviewAvailableCents` for Reviews and optional `enrolled`
-  status; the latter reports the separate legacy CLI wallet's `balanceCents`.
-  These are shared balances: do not add them together, treat them as unlimited,
-  or infer review eligibility or spending authorization from their size.
-- Read each section's `state` and `reason`. Missing fields, denied billing
-  access, unsupported authentication, and failed lookups mean unknown, not zero
-  credits. Do not switch organizations to find a larger allowance.
-
-When a review returns `action_required` with `action: rerun_with_use_credits`,
-explain the server's `billableFilesCount`, `maximumCostCents`, and `promotionTerms`
-when present. Amounts are in cents; an absent cost is unknown, not free. The
-offer is the run-specific source for continuation; neither a wallet balance nor
-active usage billing substitutes for it.
-
-`--use-credits` on review authorizes additional credit spending; add it only
-when that spending is authorized. Honor existing authorization within its stated
-scope instead of asking again. When authorized, rerun the original review with
-`--use-credits`, retaining `--agent`, its directory, and all scope flags; the
-returned command is a generic hint, not a replacement for the original scope.
-Otherwise report the offer and available reset timing so the user can decide.
-Do not busy-retry a rate limit or use `--light` as a quota workaround: review
-modes share the same limits.
+- Run `coderabbit usage --agent` to check review allowance, billing usage, and available credit/cap information. If the installed version lacks `--agent`, use `coderabbit usage`.
+- When a review returns `rerun_with_use_credits`, use its cost and promotion details; retry the same review with `--use-credits`, preserving its directory and scope flags.
+- `--use-credits` on review authorizes additional credit spending; add it only when that spending is authorized.
 
 ## Local configuration
 

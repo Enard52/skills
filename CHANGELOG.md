@@ -33,8 +33,7 @@ All notable changes to this repository are documented in this file.
 
 ### Changed
 
-- Corrected `usage --agent` guidance and explained included allowances, separate
-  credit balances, shared spending caps, and scoped paid-continuation offers.
+- Documented `usage --agent` and authorized review retries with `--use-credits`.
 
 - The Claude plugin now ships the `code-review` and `autofix` skills and the
   `code-reviewer` and `autofix` subagents. It no longer includes the
