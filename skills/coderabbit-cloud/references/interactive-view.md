@@ -70,6 +70,10 @@ deleted. Plan approval reloads the current finalized plan and submits that
 exact version and content hash. It can load a newer version than a separate
 read. If the plan changes after the reload, approval returns `plan_stale` and
 approves nothing: reread and show the new plan, then obtain approval again.
+`/approve` has no version option. A newer plan can finish between showing a
+plan and invoking `/approve`, and that newer plan can be approved without a
+second confirmation. Do not treat `/approve` as confirmation of an exact
+previously reviewed version.
 
 ### Delivery and the pull request
 
