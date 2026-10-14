@@ -42,8 +42,9 @@ can be older than these instructions.
   mode. In `code new`, put `--agent` before `--plan`.
 - With `--agent`, stdout is newline-delimited JSON. Each record has a `type`:
   `status`, `trace`, `task`, `complete`, `error`, or `action_required`.
-  `resume --agent --interactive` additionally emits `session` and correlated
-  `response` records. For continuous two-way communication, read
+  When installed help lists `--interactive`, `resume --agent --interactive`
+  additionally emits `session` and correlated `response` records. For
+  continuous two-way communication, read
   [the bidirectional protocol](references/interactive-view.md#bidirectional-agent-mode).
   Its questions and turn endings do not end the session; inspect each response,
   not just the last record.
@@ -103,7 +104,7 @@ Never do these things:
   view or implements it in the web app, and that work is billed.
 - Repeat a send after a `task_submitted`, `message_sent`, `steer_sent`,
   `answer_sent`, or `question_sent` record, except for one user-approved
-  resend after `message_dropped`.
+  resend after `message_dropped`; record that the retry was used.
 - Rerun `new` or `handoff`. The only exceptions are the `authenticate` and
   `organization_required` rules in the references, when no task can exist.
 
