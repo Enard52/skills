@@ -120,9 +120,12 @@ The last record is `action_required` with `action: "authenticate"`.
    - `push`: rerun it. See [deliver.md](references/deliver.md#push-the-tasks-changes).
    - `plan --approve`, `autopilot off`, or `cancel`: the server did not act.
      Rerun it once.
-   - `autopilot on` or `autopilot resume`: run `autopilot status` on the same
-     target. Rerun it once only if the status shows that the change did not
-     apply.
+   - `autopilot on`: run `autopilot status` on the same target. Rerun `on`
+     once only if Autopilot is off. If it is paused, report that state and ask
+     for approval before running `autopilot resume`.
+   - `autopilot resume`: run `autopilot status` on the same target. If the
+     change did not apply, report the result and wait for a new explicit user
+     request. Never rerun `resume` as a retry.
 6. If the rerun ends in `authenticate` again, stop. Report its `message` and
    `detail`.
 
