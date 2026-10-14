@@ -5,16 +5,12 @@
 ```sh
 coderabbit code new --agent "<prompt>"
 coderabbit code new --agent --plan "<prompt>"
-coderabbit code new --agent --goal "<objective>"
 coderabbit code new --agent --resume "<prompt>"
 cat <prompt-file> | coderabbit code new --agent -
 ```
 
 `code new` creates billed work. It can start the organization's Coding Agent
 trial. Run it only when the user asks, and run it once.
-
-For goal options, lifecycle controls, and goal status in follow results, read
-[goals.md](goals.md). A completed turn does not mean the goal is complete.
 
 - The task starts on the current branch as it is on `origin`: the branch
   that the current branch tracks, or the branch with the same name. Commits
@@ -48,10 +44,11 @@ exist. Let the user decide.
 | Last record                                             | Next action                                                                                                                                                                                                                                               |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `complete`, `task_submitted`                            | Report `taskId`, `url`, and each `warnings[].message`. The warning codes are `unpushed_commits`, `uncommitted_changes`, and `branch_not_on_origin`. Follow only if the user asks.                                                                         |
-| `action_required`, `authenticate`                       | Log in (see [SKILL.md](../SKILL.md#login-required)). If a `task_submitted` record appeared, run `show <taskId> --agent`. Otherwise, run `ls --agent --repo .`. Rerun `new` once only if no task for this prompt shows. If you are not sure, ask the user. |
+| `action_required`, `authenticate`                       | Log in (see [SKILL.md](../SKILL.md#login-required)). If a `task_submitted` record appeared, run `show <taskId> --agent`. Otherwise, run `ls --agent --repo .`. An absent task does not prove that creation failed. Rerun `new` only if the CLI explicitly confirms that the request was rejected before creating a task; otherwise report the uncertainty and ask the user. |
 | `error`, `billing_required`                             | The user must start a Coding Agent trial or set up billing in the web app. Stop.                                                                                                                                                                          |
 | `error`, `billing_unavailable` or `precondition_failed` | Report the `message`. Billing or the user's identity blocks the task. Stop.                                                                                                                                                                               |
-| `error`, `task_rejected`                                | Report the `message`. If the message asks you to push the branch, tell the user.                                                                                                                                                                          |
+| `error`, `task_rejected` with warning `branch_not_on_origin` | Tell the user the branch must be pushed. After they authorize the push, push it normally and retry `new` once.                                                                                                                                            |
+| `error`, `new_failed` before `task_submitted`           | The request may have reached CodeRabbit. Run `ls --agent --repo .` and use `show` for any plausible task before considering a retry. An absent list result is not proof; report the uncertainty and ask the user before running `new` again.                 |
 | `error`, `repository_not_resolved`                      | The checkout has no `origin`, or `origin` matches no repository of the organization. Report the `message`.                                                                                                                                                |
 | `error`, `operation_conflict`                           | CodeRabbit still processes the first request, so the task can exist. Do not rerun `new`. Run `ls --agent --repo .`, report what you find, and let the user decide.                                                                                        |
 | Any other `error`                                       | If a `task_submitted` record appeared, report the `taskId` and run `show <taskId> --agent`. Otherwise, report the `message`. Do not rerun `new`.                                                                                                          |
@@ -109,10 +106,13 @@ A `status` record with `status: "message_sent"`, `"steer_sent"`, or
 `"answer_sent"` means that the cloud agent received your send. The
 `message_sent` record has a `clientOperationId`.
 
-- After a send record, never send the same thing again, except after the first
-  `message_dropped` for that message. If the user approves a resend, send it
-  once and record that the retry was used. To keep following, run the command
-  without `-m`, `--steer`, or `--answer`.
+- After a send record, never send the same thing again unless the last record
+  is `message_dropped`. That error explicitly means the message was not
+  delivered. If this is the first `message_dropped` for that message, resend
+  it once and record that the retry was used. If the retry is also
+  `message_dropped`, do not resend again; report the failure and ask the user.
+  Otherwise, keep following by running the command without `-m`, `--steer`, or
+  `--answer`.
 - If no send record appeared, you can rerun the same command once only after
   these results: `authenticate`, `task_busy`, `task_stopping`, or
   `steer_not_delivered`. The CLI rejects these before the send, or the server
@@ -163,12 +163,8 @@ CLI does not know them. They are not billed minutes, and `null` is not 0.
   With a `steer_sent` record, or when the turn ended, ask the user before
   you send anything, including a `-m` message.
 - `steer_rejected`: report the reason.
-- `message_dropped`: the message left the queue before it ran, for example
-  because someone stopped the turn. A `message_sent` record appeared, so ask
-  the user before you send it again. If this is the first `message_dropped` for
-  that message and the user agrees, resend it once and record that the retry
-  was used. If the retry is also `message_dropped`, do not ask or resend again;
-  report the failure.
+- `message_dropped`: the message left the queue without being delivered, for
+  example because someone stopped the turn. Send the same message again once.
 - `task_stopping`: a stop is still finishing. Wait a few seconds, then rerun
   the same send once.
 - `task_busy`: without a send record, wait a few seconds and rerun once.

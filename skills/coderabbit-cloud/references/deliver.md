@@ -1,6 +1,6 @@
-# Review plans, push changes, and control Autofix
+# Review plans, push changes, and control Autopilot
 
-For `plan`, `push`, and `autofix`, the exit code is 0 for `complete`
+For `plan`, `push`, and `autopilot`, the exit code is 0 for `complete`
 (including `push_in_progress`) and 1 for `error` and `action_required`.
 
 ## Review and approve a plan
@@ -111,40 +111,37 @@ GitHub can ask the user to authorize CodeRabbit before the first push.
 4. After the user says that they approved, run the returned `command`. If it
    reports `task_busy` or `turn_active`, handle it as in the table.
 
-## Control Autofix
-
-`autopilot` remains an alias for `autofix`. Agent JSON fields and status codes
-retain their existing names.
+## Control Autopilot
 
 ```sh
-coderabbit code autofix status <task> --agent
-coderabbit code autofix status --pr <number-or-url> --agent
-coderabbit code autofix on <task> --agent
-coderabbit code autofix on --pr <number-or-url> --agent
-coderabbit code autofix resume <task> --agent
-coderabbit code autofix off <task> --agent
+coderabbit code autopilot status <task> --agent
+coderabbit code autopilot status --pr <number-or-url> --agent
+coderabbit code autopilot on <task> --agent
+coderabbit code autopilot on --pr <number-or-url> --agent
+coderabbit code autopilot resume <task> --agent
+coderabbit code autopilot off <task> --agent
 ```
 
-Autofix publishes the task's changes when the agent finishes. Then it fixes
+Autopilot publishes the task's changes when the agent finishes. Then it fixes
 CodeRabbit findings, required CI, and merge conflicts.
 
 - `status` only reads.
-- `on` starts Autofix. It checks Coding Agent billing. Run it only when the
+- `on` starts Autopilot. It checks Coding Agent billing. Run it only when the
   user asks, and never as a retry. `on` does not resume a paused watch.
 - `resume` starts a new repair episode after a pause. It checks billing. Run
   it only when the user asks, and never as a retry.
-- `off` stops Autofix. Run it only when the user asks.
+- `off` stops Autopilot. Run it only when the user asks.
 
 Pass a task, or `--pr`, not both. `--pr <number>` names a pull request of the
 repository that the `origin` remote of the current checkout matches. `--pr`
 also accepts a GitHub pull request URL or a GitLab merge request URL. With
-`--pr`, `on` and `resume` can create an Autofix task for the pull request.
+`--pr`, `on` and `resume` can create an Autopilot task for the pull request.
 That task is billed.
 
 The last record is `complete` with `status` `autopilot_status`,
 `autopilot_enabled`, `autopilot_disabled`, or `autopilot_resumed`. Read:
 
-- `autopilot.available`: whether the repository supports Autofix. `off`
+- `autopilot.available`: whether the repository supports Autopilot. `off`
   without a watch always reports `false`.
 - `autopilot.watch`: `null` when no watch exists. Otherwise read `taskId`,
   `url`, `prNumber`, `prUrl`, `enabled`, `state`, `rounds`, and `reason`.
@@ -152,16 +149,16 @@ The last record is `complete` with `status` `autopilot_status`,
 Errors:
 
 - `autopilot_paused`: `on` found a paused watch. Tell the user. Run
-  `autofix resume` with the same target only if the user asks.
+  `autopilot resume` with the same target only if the user asks.
 - `billing_required`: the user must start a Coding Agent trial or set up
   billing in the web app, or a spend cap or invoice hold blocks the work.
-- `access_denied`: the user cannot change Autofix for this target. Report
+- `access_denied`: the user cannot change Autopilot for this target. Report
   the `message`.
 - `action_required` with `authenticate`: log in (see
   [SKILL.md](../SKILL.md#login-required)). The rerun rules there apply.
 - `repository_not_resolved`: the checkout or the pull request URL matches no
   repository of the organization.
-- `task_not_found`: the task, or the Autofix task of the pull request, is
+- `task_not_found`: the task, or the Autopilot task of the pull request, is
   not in this organization.
 - `autopilot_failed`: report the `message`. Do not rerun `on` or `resume`
   yourself.

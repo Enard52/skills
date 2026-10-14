@@ -1,50 +1,5 @@
 # The interactive view and its slash commands
 
-## Bidirectional agent mode
-
-When installed help lists `--interactive`, use
-`coderabbit code resume <task> --agent --interactive` for a machine-driven,
-bidirectional session. This is separate from the human terminal view below.
-Keep stdin open and send one JSON object per newline; read stdout concurrently.
-Do not combine it with `-m`, `--steer`, or `--answer`.
-
-```jsonl
-{"id":"m1","command":"message","text":"Add the requested regression test"}
-{"id":"s1","command":"steer","text":"Use the existing helper"}
-{"id":"a1","command":"answer","interactionId":"<from answerTemplate>","answers":{"<question-id>":"<answer>"}}
-{"id":"r1","command":"show"}
-{"id":"q1","command":"close"}
-```
-
-These are request shapes, not a sequence to send blindly. A `cancel` request
-uses only `id` and `command` and stops remote work; send it only when requested.
-IDs must be unique within the session, 1–128 letters, digits, `_`, `.` or `-`.
-Frames must be newline-terminated and at most 262,144 bytes. Unknown fields and
-unterminated final lines are rejected.
-
-- Wait for `type: "session", status: "ready", protocolVersion: 1`. It gives the
-  task, initial trace cursor, supported commands, and request limit (10,000).
-- Match each `response` by `id`. `ok: true` acknowledges the request; it does
-  not mean the cloud turn has completed. `ok: false` contains an `error` record
-  (which may itself be `action_required`). Handle it without replaying a send.
-- `message_sent` and `steer_sent` include `clientOperationId`; keep it to
-  identify work in the trace. Failed attempts also include it. Never replay an
-  uncertain send just because its acknowledgment is missing. Duplicate IDs are
-  rejected only within this session, not after reconnecting.
-- Trace records stream independently. A `turn_end` or an `action_required`
-  question does not close the session. Answer using its `answerTemplate` on
-  stdin. Sensitive questions have no template: ask the user to answer in the
-  human view or web app; do not collect the value.
-- `close` and EOF only detach, ending with `complete/session_closed`.
-  Closing the pipe is not cancellation. A request failure does not set the
-  process exit code; a fatal session error does. On interruption, remote work
-  continues. Reconnect read-only and inspect state before considering a send.
-
-Other slash-command actions, including archiving, are not part of this protocol.
-All [side-effect rules](../SKILL.md#side-effects) still apply.
-
-## Human terminal view
-
 `coderabbit code resume <task>` without `--agent` opens an interactive view
 of the task in the user's terminal. It shows the task live and has an input
 line for messages and slash commands. You cannot use this view: it needs a
@@ -69,10 +24,6 @@ coderabbit code resume --last
   when the user asked for that action.
 
 ## Typing in the view
-
-Goal controls are `/goal`, `/goal set <objective>`, and `/goal clear`. `/mode`
-identifies a goal task, and `/mode plan` requires clearing its goal first.
-See [goals.md](goals.md) for the existing lifecycle and agent command equivalents.
 
 - Text that does not start with `/` is a message. It queues behind a running
   turn, or starts a turn. Each turn is billed. `//text` sends a message that starts with `/`.
@@ -116,33 +67,26 @@ See [goals.md](goals.md) for the existing lifecycle and agent command equivalent
 
 ### Delivery and the pull request
 
-| Command                                     | What it does                                                     | Agent mode          |
-| ------------------------------------------- | ---------------------------------------------------------------- | ------------------- |
-| `/push`                                     | Commits and pushes the changes at once, with no question.        | `push`              |
-| `/push --stacked`                           | Opens a new pull request with the changes.                       | `push --stacked`    |
-| `/pr`                                       | Shows the health of the pull request.                            | `show` (`prHealth`) |
-| `/fix ci\|comments\|conflicts`              | Asks the agent to fix CI, review comments, or conflicts. Billed. | None                |
-| `/update-branch`                            | Asks the agent to merge new upstream commits. Billed.            | None                |
-| `/autofix [on\|off\|resume\|status] [--pr]` | Shows or changes Autofix.                                        | `autofix`           |
+| Command                                       | What it does                                                     | Agent mode          |
+| --------------------------------------------- | ---------------------------------------------------------------- | ------------------- |
+| `/push`                                       | Commits and pushes the changes at once, with no question.        | `push`              |
+| `/push --stacked`                             | Opens a new pull request with the changes.                       | `push --stacked`    |
+| `/pr`                                         | Shows the health of the pull request.                            | `show` (`prHealth`) |
+| `/fix ci\|comments\|conflicts`                | Asks the agent to fix CI, review comments, or conflicts. Billed. | None                |
+| `/update-branch`                              | Asks the agent to merge new upstream commits. Billed.            | None                |
+| `/autopilot [on\|off\|resume\|status] [--pr]` | Shows or changes Autopilot.                                      | `autopilot`         |
 
 ### Task settings
 
-| Command                  | What it does                                                                                         | Agent mode        |
-| ------------------------ | ---------------------------------------------------------------------------------------------------- | ----------------- |
-| `/rename <title>`        | Renames the task.                                                                                    | None              |
-| `/review [on\|off]`      | Shows, or turns on or off, the CodeRabbit review of the changes.                                     | None              |
-| `/access [manual\|full]` | Shows or changes repository access. Full access asks first, then needs a GitHub step in the browser. | None              |
-| `/share [private\|team]` | Asks first, then changes who can see the task.                                                       | None              |
-| `/subscribe [on\|off]`   | Shows or changes the user's Slack notifications.                                                     | None              |
-| `/pin`, `/unpin`         | Pins or unpins the task in the user's task list.                                                     | None              |
-| `/archive`               | Archives the task (asks first; the view becomes read-only and its schedules pause).                  | `archive --agent` |
-| `/unarchive`             | Unarchives the task.                                                                                 | None              |
-
-For an explicit archive request, use `coderabbit code archive <task> --agent`
-after checking its installed help. It accepts a task ID or URL and runs
-without prompting. See [Archive a task](../SKILL.md#archive-a-task) for
-receipts, repeated archive behavior, and lifecycle errors. The interactive
-`/archive` command keeps its confirmation.
+| Command                  | What it does                                                                                         | Agent mode |
+| ------------------------ | ---------------------------------------------------------------------------------------------------- | ---------- |
+| `/rename <title>`        | Renames the task.                                                                                    | None       |
+| `/review [on\|off]`      | Shows, or turns on or off, the CodeRabbit review of the changes.                                     | None       |
+| `/access [manual\|full]` | Shows or changes repository access. Full access asks first, then needs a GitHub step in the browser. | None       |
+| `/share [private\|team]` | Asks first, then changes who can see the task.                                                       | None       |
+| `/subscribe [on\|off]`   | Shows or changes the user's Slack notifications.                                                     | None       |
+| `/pin`, `/unpin`         | Pins or unpins the task in the user's task list.                                                     | None       |
+| `/archive`, `/unarchive` | Archives the task (asks first; the view becomes read-only), or unarchives it.                        | None       |
 
 ### Environment, files, and links
 

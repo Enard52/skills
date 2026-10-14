@@ -34,10 +34,6 @@ true, tell the user that more tasks are in the web app.
 
 ## Show one task
 
-Goal status is available in `task.goalState` on `show` results and through
-`code goal <task> --agent`. Null state means unavailable, while `{ goal: null }`
-means no stored goal. See [goals.md](goals.md) for lifecycle states and controls.
-
 ```sh
 coderabbit code show <task> --agent
 ```
